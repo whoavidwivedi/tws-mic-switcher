@@ -12,5 +12,5 @@ else
     launchctl bootout "gui/$UID_NUM/com.user.tws-mic-switcher" 2>/dev/null || launchctl unload "$PLIST_DEST" 2>/dev/null || true
     rm -f "$PLIST_DEST"
     pkill -f "tws-mic-switcher" 2>/dev/null || true
-    echo "✅ TWS Mic Switcher uninstalled."
+    echo "==> Uninstalled."
 fi

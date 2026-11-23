@@ -35,7 +35,7 @@ public final class NotificationHelper: NSObject, UNUserNotificationCenterDelegat
         guard ConfigManager.shared.config.notificationsEnabled else { return }
         
         DispatchQueue.main.async {
-            // If running inside TWS Mic Switcher.app, use UNUserNotificationCenter / NSUserNotification
+            // If running inside tws-mic-switcher.app, use UNUserNotificationCenter / NSUserNotification
             if Bundle.main.bundleIdentifier != nil {
                 let center = UNUserNotificationCenter.current()
                 let content = UNMutableNotificationContent()
@@ -62,8 +62,8 @@ public final class NotificationHelper: NSObject, UNUserNotificationCenterDelegat
                 }
             } else {
                 // If triggered via raw terminal binary without bundle context,
-                // launch the helper inside TWS Mic Switcher.app to display the genuine app notification
-                let appPath = "/Users/whoavidwivedi/.gemini/antigravity/scratch/tws-mic-switcher/TWS Mic Switcher.app/Contents/MacOS/tws-mic-switcher"
+                // launch the helper inside tws-mic-switcher.app to display the genuine app notification
+                let appPath = "/Users/whoavidwivedi/.gemini/antigravity/scratch/tws-mic-switcher/tws-mic-switcher.app/Contents/MacOS/tws-mic-switcher"
                 if FileManager.default.isExecutableFile(atPath: appPath) {
                     let task = Process()
                     task.executableURL = URL(fileURLWithPath: appPath)

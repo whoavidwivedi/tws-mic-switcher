@@ -9,8 +9,8 @@ bin/
 *.o
 *.swiftdoc
 *.swiftmodule
-TWS Mic Switcher.app/Contents/MacOS/tws-mic-switcher
-TWS Mic Switcher.app/Contents/MacOS/test_*
+tws-mic-switcher.app/Contents/MacOS/tws-mic-switcher
+tws-mic-switcher.app/Contents/MacOS/test_*
 
 # Logs and user configuration
 *.log

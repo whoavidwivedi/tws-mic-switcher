@@ -18,7 +18,7 @@ public final class MenuBarController: NSObject, NSMenuDelegate {
                 let config = NSImage.SymbolConfiguration(pointSize: 13, weight: .regular)
                 button.image = image.withSymbolConfiguration(config)
             } else {
-                button.title = "🎧"
+                button.title = "TWS"
             }
             button.toolTip = "TWS Mic Switcher"
         }

@@ -110,7 +110,7 @@ public final class CoreAudioService {
     public func setDefaultInputDevice(id: AudioObjectID) -> Bool {
         // Critical safety check: Ensure the target device actually has input channels
         guard hasStreams(id: id, scope: kAudioDevicePropertyScopeInput) else {
-            print("🛑 Safety Block: Device ID \(id) has no input streams. Refusing to set as input.")
+            print("Safety guard: device id \(id) has no input streams, aborting switch.")
             return false
         }
         
