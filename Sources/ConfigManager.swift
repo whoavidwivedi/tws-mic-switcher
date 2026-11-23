@@ -2,13 +2,11 @@ import Foundation
 
 public struct AppConfig: Codable {
     public var enabled: Bool
-    public var notificationsEnabled: Bool
     public var preferredInputUID: String
     public var allowUSBInputs: Bool
     
     public static let `default` = AppConfig(
         enabled: true,
-        notificationsEnabled: false,
         preferredInputUID: "",
         allowUSBInputs: true
     )
@@ -44,11 +42,6 @@ public final class ConfigManager {
     
     public func setEnabled(_ value: Bool) {
         config.enabled = value
-        save()
-    }
-    
-    public func setNotificationsEnabled(_ value: Bool) {
-        config.notificationsEnabled = value
         save()
     }
     

@@ -16,6 +16,12 @@ curl -fsSL https://raw.githubusercontent.com/whoavidwivedi/tws-mic-switcher/main
 
 The installer clones the source, compiles it locally with the system Swift compiler, and manages the daemon through `launchd`. No prebuilt binaries are downloaded.
 
+Each step is reported in the terminal. Compiler output is hidden unless something fails; set `TWS_INSTALLER_VERBOSE=1` to stream it:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/whoavidwivedi/tws-mic-switcher/main/install.sh | TWS_INSTALLER_VERBOSE=1 bash
+```
+
 To build from source locally instead:
 
 ```bash
