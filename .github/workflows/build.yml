@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: macos-latest
@@ -16,11 +23,28 @@ jobs:
       - name: Verify Swift compiler
         run: swift --version
 
-      - name: Compile TWS Mic Switcher
-        run: |
-          mkdir -p bin
-          swiftc -O Sources/*.swift -o bin/tws-mic-switcher
-          ls -lh bin/tws-mic-switcher
+      - name: Lint shell scripts
+        run: bash -n install.sh uninstall.sh scripts/install.sh scripts/uninstall.sh
 
-      - name: Verify CLI Help
-        run: ./bin/tws-mic-switcher help
+      - name: Compile TWS Mic Switcher
+        run: make build
+
+      - name: Verify CLI
+        run: |
+          ./bin/tws-mic-switcher help
+          ./bin/tws-mic-switcher --version
+          ./bin/tws-mic-switcher status
+
+      - name: Verify version stamp
+        run: |
+          VERSION="$(./bin/tws-mic-switcher --version | awk '{print $2}')"
+          grep -q "appVersion = \"$VERSION\"" Sources/Version.swift
+
+      - name: Verify LaunchAgent template
+        run: |
+          sed -e "s|__BINARY_PATH__|$PWD/bin/tws-mic-switcher|g" \
+              -e "s|__HOME__|$HOME|g" \
+              com.user.tws-mic-switcher.plist.template > "$RUNNER_TEMP/tws.plist"
+          plutil -lint "$RUNNER_TEMP/tws.plist"
+          grep -q "$PWD/bin/tws-mic-switcher" "$RUNNER_TEMP/tws.plist"
+          ! grep -q "__BINARY_PATH__" "$RUNNER_TEMP/tws.plist"
