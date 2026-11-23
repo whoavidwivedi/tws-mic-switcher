@@ -82,15 +82,6 @@ public final class MenuBarController: NSObject, NSMenuDelegate {
         toggleEnableItem.state = isEnabled ? .on : .off
         menu.addItem(toggleEnableItem)
         
-        // Toggle Notifications
-        let toggleNotifItem = NSMenuItem(
-            title: "Show Desktop Notifications",
-            action: #selector(toggleNotifications),
-            keyEquivalent: "n"
-        )
-        toggleNotifItem.target = self
-        toggleNotifItem.state = config.notificationsEnabled ? .on : .off
-        menu.addItem(toggleNotifItem)
         menu.addItem(NSMenuItem.separator())
         
         // Action: Force switch now
@@ -120,12 +111,6 @@ public final class MenuBarController: NSObject, NSMenuDelegate {
         if !current {
             SwitcherEngine.shared.evaluateAndSwitch(reason: "User Enabled")
         }
-        refreshMenu()
-    }
-    
-    @objc private func toggleNotifications() {
-        let current = ConfigManager.shared.config.notificationsEnabled
-        ConfigManager.shared.setNotificationsEnabled(!current)
         refreshMenu()
     }
     
