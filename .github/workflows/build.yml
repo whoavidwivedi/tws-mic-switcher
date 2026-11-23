@@ -24,7 +24,7 @@ jobs:
         run: swift --version
 
       - name: Lint shell scripts
-        run: bash -n install.sh uninstall.sh scripts/install.sh scripts/uninstall.sh
+        run: bash -n install.sh uninstall.sh scripts/install.sh scripts/uninstall.sh scripts/ui.sh
 
       - name: Compile TWS Mic Switcher
         run: make build
