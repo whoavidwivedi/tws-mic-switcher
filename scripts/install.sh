@@ -3,6 +3,8 @@ set -e
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BIN_PATH="$DIR/bin/tws-mic-switcher"
+BIN_LINK_DIR="$HOME/.local/bin"
+BIN_LINK="$BIN_LINK_DIR/tws-mic-switcher"
 LAUNCH_AGENTS_DIR="$HOME/Library/LaunchAgents"
 PLIST_NAME="com.user.tws-mic-switcher.plist"
 PLIST_DEST="$LAUNCH_AGENTS_DIR/$PLIST_NAME"
@@ -20,6 +22,9 @@ if [ -f "$DIR/AppIcon.icns" ]; then
     cp "$DIR/AppIcon.icns" "$DIR/tws-mic-switcher.app/Contents/Resources/AppIcon.icns"
 fi
 
+mkdir -p "$BIN_LINK_DIR"
+ln -sf "$BIN_PATH" "$BIN_LINK"
+
 mkdir -p "$LAUNCH_AGENTS_DIR"
 mkdir -p "$LOG_DIR"
 
@@ -31,6 +36,8 @@ sed -e "s|__BINARY_PATH__|$BIN_PATH|g" \
     -e "s|__HOME__|$HOME|g" \
     "$DIR/com.user.tws-mic-switcher.plist.template" > "$PLIST_DEST"
 
+plutil -lint "$PLIST_DEST" >/dev/null
+
 echo "==> Starting daemon..."
 if launchctl bootstrap "gui/$UID_NUM" "$PLIST_DEST" 2>/dev/null; then
     :
@@ -38,7 +45,19 @@ else
     launchctl load -w "$PLIST_DEST" 2>/dev/null || true
 fi
 
+if ! launchctl print "gui/$UID_NUM/com.user.tws-mic-switcher" >/dev/null 2>&1; then
+    echo "error: the LaunchAgent failed to load. Check $PLIST_DEST" >&2
+    exit 1
+fi
+
 echo "==> Installed successfully."
+echo "    Version: $("$BIN_PATH" --version)"
 echo "    Binary:  $BIN_PATH"
+echo "    CLI:     $BIN_LINK"
 echo "    Service: $PLIST_DEST"
 echo "    Logs:    $LOG_DIR/tws-mic-switcher.log"
+
+case ":$PATH:" in
+    *":$BIN_LINK_DIR:"*) ;;
+    *) echo "    Note: add $BIN_LINK_DIR to PATH to run 'tws-mic-switcher' directly." ;;
+esac

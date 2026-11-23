@@ -5,6 +5,7 @@
 
 # Build and binary artifacts
 bin/
+dist/
 *.dSYM/
 *.o
 *.swiftdoc

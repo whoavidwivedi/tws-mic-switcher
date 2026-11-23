@@ -15,6 +15,8 @@ func printUsage() {
       switch            Manually switch default input to built-in microphone
       enable            Enable automatic switching
       disable           Disable/pause automatic switching
+      version           Print the installed version
+      update [--check]  Check for, or install, the latest release
       daemon            Run headless daemon process (used by LaunchAgent)
       menubar           Run with menu bar extra
       help              Show this help text
@@ -24,6 +26,7 @@ func printUsage() {
 func handleStatus() {
     print("tws-mic-switcher status")
     let config = ConfigManager.shared.config
+    print("  Version:         \(appVersion)")
     print("  State:           \(config.enabled ? "enabled" : "paused")")
     print("  Allow USB:       \(config.allowUSBInputs)")
     
@@ -106,6 +109,11 @@ if args.count <= 1 {
     case "disable":
         ConfigManager.shared.setEnabled(false)
         print("tws-mic-switcher disabled.")
+    case "version", "--version", "-v":
+        print("tws-mic-switcher \(appVersion)")
+    case "update":
+        let checkOnly = args.dropFirst(2).contains("--check")
+        exit(Updater.run(checkOnly: checkOnly))
     case "help", "--help", "-h":
         printUsage()
     default:
