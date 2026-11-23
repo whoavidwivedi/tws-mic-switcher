@@ -1,0 +1,26 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify Swift compiler
+        run: swift --version
+
+      - name: Compile TWS Mic Switcher
+        run: |
+          mkdir -p bin
+          swiftc -O Sources/*.swift -o bin/tws-mic-switcher
+          ls -lh bin/tws-mic-switcher
+
+      - name: Verify CLI Help
+        run: ./bin/tws-mic-switcher help

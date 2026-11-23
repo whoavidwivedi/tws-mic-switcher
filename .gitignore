@@ -1,0 +1,17 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Build and binary artifacts
+bin/
+*.dSYM/
+*.o
+*.swiftdoc
+*.swiftmodule
+TWS Mic Switcher.app/Contents/MacOS/tws-mic-switcher
+TWS Mic Switcher.app/Contents/MacOS/test_*
+
+# Logs and user configuration
+*.log
+.config/
