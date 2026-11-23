@@ -1,106 +1,108 @@
-# 🎧 TWS Mic Switcher for macOS
+# tws-mic-switcher
 
-A native, zero-dependency macOS background service that **automatically locks and switches your microphone input to your MacBook built-in microphone whenever your TWS (True Wireless Stereo) or Bluetooth headphones connect.**
+A lightweight, zero-dependency macOS background service that keeps your default audio input on your Mac's built-in microphone when Bluetooth headphones connect.
+
+This prevents macOS from switching Bluetooth audio output from high-quality stereo (A2DP) to low-bitrate hands-free mode (SCO/HFP).
 
 ---
 
-## ⚡️ Quick Install (1-Line Command)
+## Quick Install
 
-Run this command in Terminal to install and start the background daemon:
+Install and load the background daemon via Terminal:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/whoavidwivedi/tws-mic-switcher/main/install.sh | bash
 ```
 
----
-
-## 💡 Why This Feature Is Essential on macOS
-
-When you connect any Bluetooth earbuds (OPPO, Sony, AirPods, Bose, Galaxy Buds, Nothing Ear, Jabra, etc.) to macOS:
-
-1. **The Bluetooth Audio Quality Drop (HFP/SCO Profile):**
-   macOS automatically sets both sound output and microphone input to the newly connected Bluetooth device. When any app (Zoom, Google Meet, Slack, Discord, FaceTime, Siri, or browser tabs) activates the microphone:
-   - macOS drops Bluetooth from **high-bitrate stereo A2DP (AAC at 256–320 kbps)** to **two-way hands-free mode (16 kHz mono / 64 kbps)**.
-   - Music, videos, system sounds, and call audio immediately sound muffled, robotic, and degraded.
-2. **MacBook Air/Pro Microphone is Studio Quality:**
-   MacBooks feature a studio-quality 3-microphone beamforming array with high signal-to-noise ratio that vastly outperforms micro-stem earbud microphones.
-
-### The Solution:
-By keeping default input locked to your MacBook built-in microphone:
-- macOS **never switches Bluetooth to hands-free profile**.
-- Your headphones stay in **pristine stereo A2DP (AAC)** audio output at all times.
-- Your calls, meetings, and voice recordings use the studio-grade MacBook microphone.
-
----
-
-## 🏗️ How It Works
-
-```mermaid
-flowchart TD
-    A["TWS / Bluetooth Earbuds Connect"] --> B["macOS CoreAudio Subsystem"]
-    B -->|"Hardware Event Notification"| C["TWS Mic Switcher Daemon"]
-    C --> D{"Is current default input Bluetooth?"}
-    D -- "No (Built-in or USB Mic)" --> E["No change needed"]
-    D -- "Yes (Earbud mic activated)" --> F["Lookup MacBook Air Microphone"]
-    F --> G["Set Default Input -> MacBook Built-in Mic"]
-    G --> H["Audio Output Remains In Pristine A2DP Stereo!"]
-    G --> I["Post Native macOS Notification Banner"]
-```
-
-- **Smart Auto-Switch on Connection:** Automatically keeps mic input on MacBook built-in mic during the initial TWS connection window.
-- **Respects Manual User Selection:** If you manually choose your TWS microphone in Sound Settings / Control Center (e.g. to walk into another room), the daemon respects your choice and will **never** override it.
-- **100% Silent & Non-Intrusive:** Operates completely silently in the background with zero desktop banners or notification interruptions.
-- **100% Native & Zero-Dependency:** Written entirely in Swift using native macOS `CoreAudio.framework` and `AppKit.framework`.
-- **Audio Output is Read-Only:** Audio output, output volume, mute status, and stereo channels are strictly read-only and never modified.
-- **Zero Polling (0.0% CPU):** Pure event-driven CoreAudio HAL property listeners. Wakes for ~5ms on device connect and sleeps completely otherwise.
-- **USB Mic Friendly:** Dedicated USB microphones (e.g. Blue Yeti, Shure, Rode) are never overridden.
-
----
-
-## 🚀 CLI Commands
+To build from source locally instead:
 
 ```bash
-# Check current audio routing and switcher status
+git clone https://github.com/whoavidwivedi/tws-mic-switcher.git
+cd tws-mic-switcher
+make install
+```
+
+---
+
+## The Problem
+
+When Bluetooth headphones or earbuds (AirPods, Sony, Bose, Galaxy Buds, OPPO, etc.) connect to a Mac, macOS automatically routes both default output and default input to the connected device.
+
+As soon as an application (Zoom, Meet, Slack, Discord, FaceTime, or a web browser) accesses the microphone:
+
+1. The Bluetooth connection drops from **A2DP stereo (AAC ~256 kbps)** down to **bidirectional hands-free profile (HFP/SCO)**.
+2. In HFP mode, audio output bandwidth is throttled to **16 kHz mono (~64 kbps)**.
+3. System sounds, music, and voices immediately sound muffled, compressed, and distorted.
+
+By automatically holding the default input on the Mac's built-in microphone, macOS never activates the Bluetooth headset microphone profile. Audio output stays in full stereo A2DP at all times.
+
+---
+
+## Key Features
+
+- **Automatic routing on connect:** Catches the initial connection event and routes default input back to the built-in microphone.
+- **Respects manual overrides:** If you deliberately select your Bluetooth mic in Control Center or System Settings (e.g., to walk away from your desk during a call), the daemon respects your choice and will not override it.
+- **Zero background CPU:** Event-driven via CoreAudio Hardware Abstraction Layer (`AudioObjectAddPropertyListenerBlock`). Consumes 0.0% CPU when idle; no polling loops or timers.
+- **Strictly read-only for audio output:** Output devices, volume sliders, mute states, and audio streams are never altered.
+- **USB mic compatible:** Dedicated USB audio interfaces or USB microphones are left untouched.
+- **Completely silent:** Runs headless in the background via `launchd` without desktop banners or notification popups.
+
+---
+
+## CLI Reference
+
+The binary is installed to `~/.tws-mic-switcher/bin/tws-mic-switcher` and symlinked for easy access:
+
+```bash
+# Check current audio routing and active devices
 tws-mic-switcher status
 
-# Manually force switch default input to MacBook Mic now
+# Force input back to built-in mic immediately
 tws-mic-switcher switch
 
-# Run with an optional visual Menu Bar icon (with toggles & status)
-tws-mic-switcher menubar
-
-# Toggle desktop notification banners
-tws-mic-switcher notify off
-tws-mic-switcher notify on
-
-# Test the custom notification banner
-tws-mic-switcher test-notify
-
-# Temporarily pause / re-enable auto-switching
+# Pause or resume automatic switching
 tws-mic-switcher disable
 tws-mic-switcher enable
 
-# Tail live logs
+# Tail background daemon logs
 tail -f ~/Library/Logs/tws-mic-switcher.log
+```
+
+### Optional Menu Bar App
+
+If you prefer a menu bar icon with a live device overview and toggle controls:
+
+```bash
+tws-mic-switcher menubar
 ```
 
 ---
 
-## 🛑 Uninstallation
+## Technical Details
 
-To completely stop and remove the LaunchAgent service:
+- **Language:** Swift (compiled natively via `/usr/bin/swiftc` to an Apple Silicon `arm64` binary).
+- **Frameworks:** CoreAudio HAL (`AudioObjectGetPropertyData`, `AudioObjectSetPropertyData`).
+- **Process Management:** Managed as a user LaunchAgent (`~/Library/LaunchAgents/com.user.tws-mic-switcher.plist`).
+- **Dependencies:** None. Links only against macOS system libraries in `/System/Library/Frameworks`.
+
+---
+
+## Uninstall
+
+To remove the LaunchAgent and delete installed files:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/whoavidwivedi/tws-mic-switcher/main/uninstall.sh | bash
 ```
 
-Or from local clone:
+Or from a local clone:
+
 ```bash
-./uninstall.sh
+make uninstall
 ```
 
 ---
 
-## 📄 License
+## License
 
-MIT License. Free and open source for everyone.
+MIT
