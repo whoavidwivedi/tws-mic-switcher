@@ -15,3 +15,7 @@ tws-mic-switcher.app/Contents/MacOS/test_*
 # Logs and user configuration
 *.log
 .config/
+
+# Local social preview images (not tracked in repo)
+*.png
+assets/
