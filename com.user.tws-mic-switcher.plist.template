@@ -6,7 +6,7 @@
     <string>com.user.tws-mic-switcher</string>
     <key>ProgramArguments</key>
     <array>
-        <string>__HOME__/.gemini/antigravity/scratch/tws-mic-switcher/tws-mic-switcher.app/Contents/MacOS/tws-mic-switcher</string>
+        <string>__BINARY_PATH__</string>
         <string>daemon</string>
     </array>
     <key>RunAtLoad</key>

@@ -12,8 +12,11 @@ if ! command -v swiftc >/dev/null 2>&1; then
 fi
 
 if [ -d "$INSTALL_DIR/.git" ]; then
-    echo "==> Updating repository in $INSTALL_DIR..."
-    git -C "$INSTALL_DIR" pull --quiet
+    echo "==> Updating existing installation in $INSTALL_DIR..."
+    if ! git -C "$INSTALL_DIR" pull --ff-only --quiet; then
+        echo "error: could not update $INSTALL_DIR. Check your network connection and try again." >&2
+        exit 1
+    fi
 else
     echo "==> Cloning repository to $INSTALL_DIR..."
     rm -rf "$INSTALL_DIR"
