@@ -8,7 +8,7 @@ public struct AppConfig: Codable {
     
     public static let `default` = AppConfig(
         enabled: true,
-        notificationsEnabled: true,
+        notificationsEnabled: false,
         preferredInputUID: "",
         allowUSBInputs: true
     )

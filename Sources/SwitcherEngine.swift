@@ -6,38 +6,63 @@ public final class SwitcherEngine {
     
     private let workQueue = DispatchQueue(label: "com.twsmicswitcher.engine", qos: .userInitiated)
     private var verificationWorkItem: DispatchWorkItem?
-    private var lastNotificationTime: Date = Date.distantPast
-    private var lastHandledBluetoothID: AudioObjectID = 0
+    
+    // Tracking connected Bluetooth devices to distinguish new connections from manual changes
+    private var knownBluetoothDeviceIDs: Set<AudioObjectID> = []
+    private var connectionWindowDeviceID: AudioObjectID? = nil
+    private var connectionWindowExpires: Date = Date.distantPast
+    private var lastLoggedManualID: AudioObjectID = 0
     
     private init() {}
     
     public func start() {
-        log("TWS Mic Switcher engine starting up...")
+        log("TWS Mic Switcher engine v1.1.0 starting up (Silent & Non-Intrusive Mode)...")
         
-        // Initial evaluation on startup
+        // Initial inventory of currently connected Bluetooth devices
         workQueue.async { [weak self] in
-            self?.evaluateAndSwitch(reason: "Engine Startup")
+            guard let self = self else { return }
+            let initialBT = CoreAudioService.shared.getAllDevices().filter { $0.isBluetooth }
+            self.knownBluetoothDeviceIDs = Set(initialBT.map { $0.id })
+            self.log("Initial state: \(initialBT.count) Bluetooth audio device(s) detected.")
         }
         
-        // Register CoreAudio listeners
+        // Register CoreAudio property listeners
         CoreAudioService.shared.addAudioListeners(queue: workQueue) { [weak self] eventName in
             self?.handleAudioChangeEvent(eventName: eventName)
         }
         
-        log("CoreAudio listeners active. Watching for TWS / Bluetooth audio connections.")
+        log("CoreAudio listeners active. Watching for TWS / Bluetooth connection events.")
     }
     
     private func handleAudioChangeEvent(eventName: String) {
+        if eventName == "DevicesList" {
+            // Check for newly connected or disconnected Bluetooth devices
+            let currentBT = CoreAudioService.shared.getAllDevices().filter { $0.isBluetooth }
+            let currentIDs = Set(currentBT.map { $0.id })
+            
+            // Find devices that were NOT in knownBluetoothDeviceIDs
+            let newlyConnected = currentBT.filter { !knownBluetoothDeviceIDs.contains($0.id) }
+            if let newDevice = newlyConnected.first {
+                log("🎧 TWS connection event: '\(newDevice.name)' (ID: \(newDevice.id)) connected. Opening auto-switch window.")
+                connectionWindowDeviceID = newDevice.id
+                connectionWindowExpires = Date().addingTimeInterval(4.0) // 4-second connection window for macOS routing
+            }
+            
+            knownBluetoothDeviceIDs = currentIDs
+        }
+        
         // Immediate check
         evaluateAndSwitch(reason: "Event: \(eventName)")
         
-        // Scheduled follow-up check to catch macOS delayed audio routing
-        verificationWorkItem?.cancel()
-        let item = DispatchWorkItem { [weak self] in
-            self?.evaluateAndSwitch(reason: "Delayed Verification (\(eventName))")
+        // Scheduled follow-up check to catch macOS delayed audio routing during initial connection
+        if Date() < connectionWindowExpires {
+            verificationWorkItem?.cancel()
+            let item = DispatchWorkItem { [weak self] in
+                self?.evaluateAndSwitch(reason: "Delayed Connection Verification (\(eventName))")
+            }
+            verificationWorkItem = item
+            workQueue.asyncAfter(deadline: .now() + 0.45, execute: item)
         }
-        verificationWorkItem = item
-        workQueue.asyncAfter(deadline: .now() + 0.45, execute: item)
     }
     
     public func evaluateAndSwitch(reason: String) {
@@ -49,46 +74,47 @@ public final class SwitcherEngine {
             return
         }
         
-        // If current input is Bluetooth, we must switch it back to Built-In Mic
+        // If current input is Bluetooth, determine whether it's an initial connection or a manual user choice
         if currentInput.isBluetooth {
-            guard let targetMic = CoreAudioService.shared.findBuiltInMicrophone(
-                preferredUID: ConfigManager.shared.config.preferredInputUID
-            ) else {
-                log("⚠️ Bluetooth input detected ('\(currentInput.name)'), but no suitable built-in microphone was found.")
-                return
-            }
+            let isConnectionEvent = (currentInput.id == connectionWindowDeviceID && Date() <= connectionWindowExpires)
             
-            if targetMic.id == currentInput.id {
-                // Already target
-                return
-            }
-            
-            log("⚡️ [\(reason)] Bluetooth input active: '\(currentInput.name)'. Switching default input to '\(targetMic.name)'...")
-            
-            let success = CoreAudioService.shared.setDefaultInputDevice(id: targetMic.id)
-            if success {
-                let currentOutput = CoreAudioService.shared.getDefaultOutputDevice()
-                log("✅ Successfully switched microphone to '\(targetMic.name)'. Output remains on '\(currentOutput?.name ?? "Unknown")'.")
+            if isConnectionEvent {
+                // Initial TWS connection event: Revert mic back to MacBook built-in mic
+                guard let targetMic = CoreAudioService.shared.findBuiltInMicrophone(
+                    preferredUID: ConfigManager.shared.config.preferredInputUID
+                ) else {
+                    log("⚠️ Bluetooth input active ('\(currentInput.name)'), but no suitable built-in microphone was found.")
+                    return
+                }
                 
-                // Rate-limit notifications to once every 3 seconds per device transition
-                let now = Date()
-                if now.timeIntervalSince(lastNotificationTime) > 3.0 || lastHandledBluetoothID != currentInput.id {
-                    lastNotificationTime = now
-                    lastHandledBluetoothID = currentInput.id
-                    
-                    let outName = currentOutput?.name ?? "Earbuds"
-                    let inName = targetMic.name
-                    
-                    NotificationHelper.shared.sendNotification(
-                        title: "🎧 \(currentInput.name) Connected",
-                        subtitle: "🎙️ Mic Kept on \(inName)",
-                        message: "✨ Studio-grade mic active • HD Stereo preserved on \(outName)",
-                        sound: "Pop"
-                    )
+                if targetMic.id == currentInput.id {
+                    return
+                }
+                
+                log("⚡️ [\(reason)] Newly connected TWS detected ('\(currentInput.name)'). Auto-switching mic to '\(targetMic.name)' to protect HD stereo output.")
+                
+                let success = CoreAudioService.shared.setDefaultInputDevice(id: targetMic.id)
+                if success {
+                    let currentOutput = CoreAudioService.shared.getDefaultOutputDevice()
+                    log("✅ Default input set to '\(targetMic.name)'. Output remains on '\(currentOutput?.name ?? "Unknown")'.")
+                    // Window served its purpose for this connection
+                    connectionWindowDeviceID = nil
+                    connectionWindowExpires = Date.distantPast
+                } else {
+                    log("❌ Failed to set default input device to ID \(targetMic.id).")
                 }
             } else {
-                log("❌ Failed to set default input device to ID \(targetMic.id).")
+                // Manual User Change!
+                // The device was already connected and outside the initial connection window.
+                // The user deliberately selected this microphone in Control Center / System Settings.
+                if lastLoggedManualID != currentInput.id {
+                    lastLoggedManualID = currentInput.id
+                    log("ℹ️ Manual mic selection: '\(currentInput.name)'. Respecting user choice (will not revert).")
+                }
             }
+        } else {
+            // Input is not Bluetooth (e.g. built-in mic or USB mic)
+            lastLoggedManualID = 0
         }
     }
     

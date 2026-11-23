@@ -47,11 +47,13 @@ flowchart TD
     G --> I["Post Native macOS Notification Banner"]
 ```
 
+- **Smart Auto-Switch on Connection:** Automatically keeps mic input on MacBook built-in mic during the initial TWS connection window.
+- **Respects Manual User Selection:** If you manually choose your TWS microphone in Sound Settings / Control Center (e.g. to walk into another room), the daemon respects your choice and will **never** override it.
+- **100% Silent & Non-Intrusive:** Operates completely silently in the background with zero desktop banners or notification interruptions.
 - **100% Native & Zero-Dependency:** Written entirely in Swift using native macOS `CoreAudio.framework` and `AppKit.framework`.
 - **Audio Output is Read-Only:** Audio output, output volume, mute status, and stereo channels are strictly read-only and never modified.
 - **Zero Polling (0.0% CPU):** Pure event-driven CoreAudio HAL property listeners. Wakes for ~5ms on device connect and sleeps completely otherwise.
 - **USB Mic Friendly:** Dedicated USB microphones (e.g. Blue Yeti, Shure, Rode) are never overridden.
-- **Genuine macOS App Notification:** Integrates with macOS Notification Center with custom app icon and audio chime (no AppleScript/Script Editor banners).
 
 ---
 
