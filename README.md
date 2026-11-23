@@ -1,5 +1,9 @@
 # tws-mic-switcher
 
+<p align="center">
+  <img src="assets/social-preview.png" alt="tws-mic-switcher" width="100%">
+</p>
+
 A lightweight, zero-dependency macOS background service that keeps your default audio input on your Mac's built-in microphone when Bluetooth headphones connect.
 
 This prevents macOS from switching Bluetooth audio output from high-quality stereo (A2DP) to low-bitrate hands-free mode (SCO/HFP).
